@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { KimaiConfig } from "./types";
+import kimaiConfData from "../kimai-conf.json";
 
 dotenv.config();
 
@@ -32,9 +33,4 @@ if (
 export const DEFAULT_CUSTOMER_ID = parseInt(KIMAI_DEFAULT_CUSTOMER, 10);
 export const DEFAULT_PROJECT_ID = parseInt(KIMAI_DEFAULT_PROJECT, 10);
 
-const localPath = path.resolve(process.cwd(), "kimai-conf.json");
-const secretPath = "/etc/secrets/kimai-conf.json";
-const configPath = fs.existsSync(secretPath) ? secretPath : localPath;
-export const kimaiConf: KimaiConfig = JSON.parse(
-  fs.readFileSync(configPath, "utf-8"),
-);
+export const kimaiConf: KimaiConfig = kimaiConfData as KimaiConfig;
