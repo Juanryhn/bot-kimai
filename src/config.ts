@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import dotenv from "dotenv";
 import { KimaiConfig } from "./types";
 import kimaiConfData from "../kimai-conf.json";
