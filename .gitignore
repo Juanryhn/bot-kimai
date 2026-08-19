@@ -4,3 +4,4 @@ dist/
 kimai-conf.json
 *.log
 .DS_Store
+.vscode/
