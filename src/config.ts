@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { KimaiConfig } from "./types";
-import kimaiConfData from "../kimai-conf.json";
+import { kimaiConfData } from "./kimai-conf";
 
 dotenv.config();
 
