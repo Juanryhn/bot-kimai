@@ -51,6 +51,5 @@ const gracefulShutdown = (signal: string) => {
     process.exit(0);
   });
 };
-
 process.once("SIGINT", () => gracefulShutdown("SIGINT"));
 process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
