@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Telegraf, Context } from "telegraf";
-import { TELEGRAM_BOT_TOKEN, ALLOWED_TELEGRAM_USER_ID } from "../src/config";
-import { registerStartHandler } from "../src/handlers/start";
-import { registerAskHandler } from "../src/handlers/ask";
+import { TELEGRAM_BOT_TOKEN, ALLOWED_TELEGRAM_USER_ID } from "./config";
+import { registerStartHandler } from "./handlers/start";
+import { registerAskHandler } from "./handlers/ask";
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 const ALLOWED_ID = parseInt(ALLOWED_TELEGRAM_USER_ID || "0", 10);
