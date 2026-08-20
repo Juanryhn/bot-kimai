@@ -55,7 +55,6 @@ export function registerAskHandler(bot: Telegraf) {
     try {
       const timesheetEntries: TimesheetEntry[] =
         await parseTimesheetEntries(userPrompt);
-      console.log("🟢 Groq result:", JSON.stringify(timesheetEntries));
 
       if (!Array.isArray(timesheetEntries) || timesheetEntries.length === 0) {
         throw new Error("Failed to extract timesheet data from the command.");
