@@ -22,6 +22,12 @@ registerAskHandler(bot);
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log(
+    "🟣 WEBHOOK HIT — method:",
+    req.method,
+    "body:",
+    JSON.stringify(req.body),
+  );
   if (req.method !== "POST") {
     return res.status(200).send("Bot Kimai AI is alive");
   }
