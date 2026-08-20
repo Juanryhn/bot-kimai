@@ -1,10 +1,11 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Telegraf, Context } from "telegraf";
 import { TELEGRAM_BOT_TOKEN, ALLOWED_TELEGRAM_USER_ID } from "./config";
+import { startHealthServer, stopServer } from "./local-srvr";
 import { registerStartHandler } from "./handlers/start";
 import { registerAskHandler } from "./handlers/ask";
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
+
 const ALLOWED_ID = parseInt(ALLOWED_TELEGRAM_USER_ID || "0", 10);
 
 bot.use((ctx: Context, next: () => Promise<void>) => {
@@ -19,31 +20,36 @@ bot.use((ctx: Context, next: () => Promise<void>) => {
 registerStartHandler(bot);
 registerAskHandler(bot);
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
+const server = startHealthServer();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log(
-    "🟣 WEBHOOK HIT — method:",
-    req.method,
-    "body:",
-    JSON.stringify(req.body),
-  );
-  if (req.method !== "POST") {
-    return res.status(200).send("Bot Kimai AI is alive");
-  }
-
-  const secretHeader = req.headers["x-telegram-bot-api-secret-token"];
-  console.log("secretHeader: ", secretHeader);
-  console.log("WEBHOOK_SECRET: ", WEBHOOK_SECRET);
-  if (secretHeader !== WEBHOOK_SECRET) {
-    return res.status(401).send("unauthorized");
-  }
-
+async function main() {
   try {
-    await bot.handleUpdate(req.body);
-    return res.status(200).send("ok");
+    console.log("🚀 Starting bot and testing Telegram connection...");
+    const botInfo = await bot.telegram.getMe();
+
+    console.log("==============================================");
+    console.log(
+      `✅ Bot Kimai AI connected successfully! (@${botInfo.username})`,
+    );
+    console.log("🤖 Status: Standby & Listening for messages...");
+    console.log("==============================================");
+
+    await bot.launch();
   } catch (err) {
-    console.error("❌ Failed to handle update:", err);
-    return res.status(500).send("error");
+    console.error("❌ Failed to connect to Telegram:", err);
   }
 }
+main();
+
+const gracefulShutdown = (signal: string) => {
+  console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+
+  bot.stop(signal);
+
+  stopServer(server).then(() => {
+    console.log("🌐 Health check server closed.");
+    process.exit(0);
+  });
+};
+process.once("SIGINT", () => gracefulShutdown("SIGINT"));
+process.once("SIGTERM", () => gracefulShutdown("SIGTERM"));
