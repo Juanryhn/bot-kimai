@@ -33,13 +33,14 @@ npm install --save-dev prettier
 
 ## Development
 
-Run the bot in development mode (uses `ts-node` or similar in your workflow):
+This project runs as a webhook-based Telegram bot. The repository includes an HTTP handler at `/api/webhook` (see `api/webhook.ts`) and a `vercel.json` ready for deployment to Vercel.
 
-```bash
-npm run dev
-```
+Local development options:
 
-This starts the bot and the small health-check HTTP server on `PORT` (defaults to 3000).
+- Use Vercel CLI to run locally: `vercel dev` (recommended when testing the full serverless behavior).
+- Or run a simple TypeScript runner for quick tests: `npx tsx api/webhook.ts`.
+
+The webhook endpoint path is `/api/webhook` and the server expects Telegram POSTs to be routed there.
 
 ## Build
 
@@ -65,6 +66,7 @@ Required environment variables:
 - `KIMAI_DEFAULT_CUSTOMER` — Default customer id (integer) used when creating timesheets.
 - `KIMAI_DEFAULT_PROJECT` — Default project id (integer) used when creating timesheets.
 - `PORT` — (optional) port for the health-check HTTP server. Defaults to `3000`.
+- `WEBHOOK_SECRET` — secret token used to validate incoming Telegram webhook requests. Set this to a random string and pass it when calling `setWebhook` so Telegram will include it in webhook requests.
 
 Example `.env`:
 
@@ -78,6 +80,7 @@ KIMAI_TOKEN=your_kimai_token
 KIMAI_DEFAULT_CUSTOMER=1
 KIMAI_DEFAULT_PROJECT=2
 PORT=3000
+WEBHOOK_SECRET=your_random_secret
 ```
 
 Activity mapping (`kimai-conf.json`)
@@ -99,6 +102,9 @@ There is an example file `kimai-conf.example.json` in the repository — copy or
 ## Notes
 
 - The bot is event-driven (Telegram webhook/polling via Telegraf) and acts as an integration service rather than a general REST API.
+- The bot is webhook-driven using Telegraf's `webhookCallback`. Incoming Telegram updates are handled via the `/api/webhook` endpoint (see [api/webhook.ts](api/webhook.ts)).
+- A `vercel.json` is included to deploy the webhook as a serverless function. The default route sends requests to `/api/webhook`.
+- If you are specifically searching for the long-polling implementation of this project, see: https://github.com/Juanryhn/bot-kimai-long-polling
 - The `/ask` command content is sent to the Groq model and must return a JSON object with an `entries` array matching the expected shape.
 - The repository includes a basic rate limiter to prevent rapid repeated requests.
 
@@ -107,6 +113,16 @@ There is an example file `kimai-conf.example.json` in the repository — copy or
 - If the bot fails at startup, verify required environment variables are present. Missing variables cause an immediate error.
 - If Kimai requests fail, check `KIMAI_URL` and `KIMAI_TOKEN` and confirm the API user has permission to create timesheets.
 - If parsing fails, inspect the Groq response in logs and verify your `kimai-conf.json` activity mapping.
+
+Deployment / setWebhook tips
+
+- If you deploy to `https://your-domain.com`, register the webhook with Telegram using:
+
+```bash
+curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://your-domain.com/api/webhook&secret_token=$WEBHOOK_SECRET"
+```
+
+- Ensure `WEBHOOK_SECRET` matches the `secret_token` used in the `setWebhook` call so incoming requests are validated.
 
 ## License
 
