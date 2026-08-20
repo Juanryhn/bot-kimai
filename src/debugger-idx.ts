@@ -1,6 +1,6 @@
 import { Telegraf, Context } from "telegraf";
 import { TELEGRAM_BOT_TOKEN, ALLOWED_TELEGRAM_USER_ID } from "./config";
-import { startHealthServer, stopServer } from "./server";
+import { startHealthServer, stopServer } from "./local-srvr";
 import { registerStartHandler } from "./handlers/start";
 import { registerAskHandler } from "./handlers/ask";
 
