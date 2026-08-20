@@ -32,6 +32,15 @@ ${Object.entries(kimaiConf.activities)
   .map(([id, desc]) => `- ID ${id}: ${desc}`)
   .join("\n")}
 
+Splitting Rules (MANDATORY, Kimai rejects entries longer than 2 hours):
+- Maximum duration per entry is exactly 2 hours (120 minutes). This is a hard limit, not a suggestion.
+- If the user's requested time range is longer than 2 hours, you MUST split it into multiple consecutive entries, each at most 2 hours long.
+- The split entries MUST be back-to-back with zero gaps and zero overlaps, and together MUST cover the user's ENTIRE original time range exactly — do not drop or shorten any part of the requested duration.
+- Split as evenly as possible. Example: a 3-hour block (15:00–18:00) becomes two entries: 15:00–17:00 (2h) and 17:00–18:00 (1h) — NOT 15:00–17:00 with the remaining hour discarded.
+- Another example: a 5-hour block (08:00–13:00) becomes three entries: 08:00–10:00, 10:00–12:00, 12:00–13:00.
+- All split entries from the same original request share the same "project", "activity", and "description" (same activity, just divided across time).
+- If the user explicitly asks to divide into a specific number of parts (e.g. "bagi 2", "split into 2"), honor that number of parts ONLY if each resulting part still stays within the 2-hour max — otherwise increase the number of parts as needed to satisfy the 2-hour limit, and mention nothing extra, just return correct entries.
+
 Time format: ISO string YYYY-MM-DDTHH:mm:ss.
 
 Return a JSON response with an "entries" property containing an array of timesheet entries. Example format:
