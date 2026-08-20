@@ -12,6 +12,7 @@ let blockedUntil = 0;
 
 export function registerAskHandler(bot: Telegraf) {
   bot.command("ask", async (ctx: Context) => {
+    console.log("🔵 /ask triggered, user:", ctx.from?.id);
     const now = Date.now();
 
     if (now < blockedUntil) {
@@ -47,11 +48,14 @@ export function registerAskHandler(bot: Telegraf) {
     }
     requestTimestamps.push(now);
 
+    console.log("🔵 Sending Processing reply...");
     await ctx.reply("⚡ Processing your request ...");
+    console.log("🟢 Processing reply sent");
 
     try {
       const timesheetEntries: TimesheetEntry[] =
         await parseTimesheetEntries(userPrompt);
+      console.log("🟢 Groq result:", JSON.stringify(timesheetEntries));
 
       if (!Array.isArray(timesheetEntries) || timesheetEntries.length === 0) {
         throw new Error("Failed to extract timesheet data from the command.");
@@ -78,7 +82,7 @@ export function registerAskHandler(bot: Telegraf) {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
-      console.error(err);
+      console.log("🔴 Error caught:", err);
       await ctx.reply(`❌ *Failed to process:* ${errorMessage}`, {
         parse_mode: "Markdown",
       });
