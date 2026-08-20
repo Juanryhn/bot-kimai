@@ -15,6 +15,7 @@ export const KIMAI_TOKEN = env.KIMAI_TOKEN || "";
 export const KIMAI_DEFAULT_CUSTOMER = env.KIMAI_DEFAULT_CUSTOMER || "";
 export const KIMAI_DEFAULT_PROJECT = env.KIMAI_DEFAULT_PROJECT || "";
 export const PORT = Number(env.PORT || 3000);
+export const WEBHOOK_SECRET = env.WEBHOOK_SECRET;
 
 if (
   !TELEGRAM_BOT_TOKEN ||

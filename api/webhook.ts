@@ -1,2 +1,6 @@
 import { bot } from "../src/bot";
-export default bot.webhookCallback("/api/webhook");
+import { WEBHOOK_SECRET } from "../src/config";
+
+export default bot.webhookCallback("/api/webhook", {
+  secretToken: WEBHOOK_SECRET,
+});
