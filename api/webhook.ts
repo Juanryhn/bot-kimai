@@ -33,6 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const secretHeader = req.headers["x-telegram-bot-api-secret-token"];
+  console.log("secretHeader: ", secretHeader);
+  console.log("WEBHOOK_SECRET: ", WEBHOOK_SECRET);
   if (secretHeader !== WEBHOOK_SECRET) {
     return res.status(401).send("unauthorized");
   }
