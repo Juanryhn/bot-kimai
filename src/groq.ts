@@ -22,6 +22,12 @@ Description & Language Rules:
 - ALWAYS generate the "description" in clear, natural, professional English regardless of the input language.
 - Polish and improvise raw or informal user phrases into articulate, communicative, and humanlike work activity logs.
 
+Lunch Break & Working Hours Rules:
+- The standard lunch break/rest period is strictly from 12:01 to 12.59. Working hours resume at 13:00.
+- If a single continuous work session overlaps with or falls entirely into the 12:00 - 12:59 window, you MUST handle it in one of two ways based on user intent:
+  1. Split the session into two separate entries (e.g., Session 1 ends at 12:00, and Session 2 resumes at 13:00).
+  2. Adjust or exclude the lunch hour gap so that no logged time falls within 12:01 - 12:59.
+
 Data Mapping Rules:
 - Project ID: ${DEFAULT_PROJECT_ID} (static)
 - Customer ID: ${DEFAULT_CUSTOMER_ID} (static)
