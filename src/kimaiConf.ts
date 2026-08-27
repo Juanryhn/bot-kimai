@@ -5,7 +5,7 @@ export const kimaiConfData: KimaiConfig = {
     "4": "Belajar / Learn technology / Riset / Eksplorasi",
     "8": "Feature / Develop fitur baru / Slicing UI / Logic",
     "11": "Integrasi / Fetch backend / Endpoint",
-    "16": "Bugfix / Perbaikan error / Issue resolving",
+    "16": "Bugfix / Perbaikan error / Issue resolving / Fixing",
     "25": "Meeting / Daily standup / Koordinasi",
     "21": "Transfer Knowledge / Handover / Mentoring / Sharing session",
   },
