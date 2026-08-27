@@ -9,6 +9,7 @@ const KIMAI_HEADERS: HeadersInit = {
 export async function createTimesheet(
   entry: TimesheetEntry,
 ): Promise<KimaiResponse> {
+  console.log("entry: ", entry);
   const res = await fetch(`${KIMAI_URL}/timesheets`, {
     method: "POST",
     headers: KIMAI_HEADERS,
@@ -23,6 +24,7 @@ export async function createTimesheet(
 
   if (!res.ok) {
     const errorData = (await res.json()) as { message?: string };
+    console.log("errorData: ", errorData);
     throw new Error(`Kimai Error: ${errorData.message || res.statusText}`);
   }
 

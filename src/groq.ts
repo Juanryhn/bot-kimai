@@ -72,13 +72,17 @@ Return a JSON response with an "entries" property containing an array of timeshe
     temperature: 0.1,
     response_format: { type: "json_object" },
   });
+  console.log("completion: ", completion);
 
   const rawResponse = completion.choices[0]?.message?.content || "{}";
   const parsedData = JSON.parse(rawResponse);
+  console.log("parsedData: ", parsedData);
 
   const timesheetEntries: TimesheetEntry[] = Array.isArray(parsedData)
     ? parsedData
     : parsedData.entries || [];
+
+  console.log("timesheetEntries: ", timesheetEntries);
 
   return timesheetEntries;
 }
