@@ -3,9 +3,9 @@ import {
   GROQ_API_KEY,
   DEFAULT_PROJECT_ID,
   DEFAULT_CUSTOMER_ID,
+  kimaiConf
 } from "./config";
 import { TimesheetEntry } from "./types";
-import { kimaiConf } from "./config";
 
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 
@@ -23,10 +23,10 @@ Description & Language Rules:
 - Polish and improvise raw or informal user phrases into articulate, communicative, and humanlike work activity logs.
 
 Lunch Break & Working Hours Rules:
-- The standard lunch break/rest period is strictly from 12:01 to 12.59. Working hours resume at 13:00.
-- If a single continuous work session overlaps with or falls entirely into the 12:00 - 12:59 window, you MUST handle it in one of two ways based on user intent:
-  1. Split the session into two separate entries (e.g., Session 1 ends at 12:00, and Session 2 resumes at 13:00).
-  2. Adjust or exclude the lunch hour gap so that no logged time falls within 12:01 - 12:59.
+- The lunch break is a FIXED, NON-WORKING window: exactly 12:00:00 to 13:00:00. No entry may start, end, or overlap with ANY part of this window — not even by a single minute.
+- If the requested time range spans across 12:00:00-13:00:00, you MUST cut it into a morning segment ending at exactly 12:00:00 and an afternoon segment starting at exactly 13:00:00. Do NOT create a separate entry for the lunch window itself.
+- Apply this lunch-break split FIRST, before the 2-hour max-duration splitting rule below. Each resulting segment is then independently split further only if it still exceeds 2 hours.
+- Never produce an entry with a duration shorter than 10 minutes. A range like "12:00-12:01" is a calculation artifact, not a real work session, and must never appear in the output.
 
 Data Mapping Rules:
 - Project ID: ${DEFAULT_PROJECT_ID} (static)
@@ -41,9 +41,9 @@ ${Object.entries(kimaiConf.activities)
 Splitting Rules (MANDATORY, Kimai rejects entries longer than 2 hours):
 - Maximum duration per entry is exactly 2 hours (120 minutes). This is a hard limit, not a suggestion.
 - If the user's requested time range is longer than 2 hours, you MUST split it into multiple consecutive entries, each at most 2 hours long.
-- The split entries MUST be back-to-back with zero gaps and zero overlaps, and together MUST cover the user's ENTIRE original time range exactly — do not drop or shorten any part of the requested duration.
+- The split entries MUST be back-to-back with zero gaps and zero overlaps, and together MUST cover the user's ENTIRE original time range exactly — do not drop or shorten any part of the requested duration, except for the mandatory lunch-break gap above.
 - Split as evenly as possible. Example: a 3-hour block (15:00–18:00) becomes two entries: 15:00–17:00 (2h) and 17:00–18:00 (1h) — NOT 15:00–17:00 with the remaining hour discarded.
-- Another example: a 5-hour block (08:00–13:00) becomes three entries: 08:00–10:00, 10:00–12:00, 12:00–13:00.
+- Example combining lunch-break split + 2-hour cap: a request for 08:00–15:00 (7 hours, spans lunch) is FIRST split by the lunch break into 08:00–12:00 (4h) and 13:00–15:00 (2h). The morning segment still exceeds 2 hours, so it is further split into 08:00–10:00 and 10:00–12:00. The afternoon segment is exactly 2 hours, so it stays as a single entry. Final result: 08:00–10:00, 10:00–12:00, 13:00–15:00 — three entries total, nothing touching 12:00–13:00.
 - All split entries from the same original request share the same "project", "activity", and "description" (same activity, just divided across time).
 - If the user explicitly asks to divide into a specific number of parts (e.g. "bagi 2", "split into 2"), honor that number of parts ONLY if each resulting part still stays within the 2-hour max — otherwise increase the number of parts as needed to satisfy the 2-hour limit, and mention nothing extra, just return correct entries.
 
