@@ -77,7 +77,7 @@ Return a JSON response with an "entries" property containing an array of timeshe
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    model: "openai/gpt-oss-20b",
+    model: "llama-3.3-70b-versatile",
     temperature: 0.1,
     response_format: { type: "json_object" },
   });
