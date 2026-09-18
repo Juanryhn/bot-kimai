@@ -3,7 +3,7 @@ import {
   GROQ_API_KEY,
   DEFAULT_PROJECT_ID,
   DEFAULT_CUSTOMER_ID,
-  kimaiConf
+  kimaiConf,
 } from "./config";
 import { TimesheetEntry } from "./types";
 
@@ -14,7 +14,7 @@ export async function parseTimesheetEntries(
 ): Promise<TimesheetEntry[]> {
   const todayISO = new Date().toISOString().split("T")[0];
 
-const systemPrompt = `
+  const systemPrompt = `
 You are an automatic timesheet parser for Kimai.
 Primary task: extract user intent, correct typos, and split into multiple sessions if requested.
 
@@ -77,7 +77,7 @@ Return a JSON response with an "entries" property containing an array of timeshe
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    model: "llama-3.3-70b-versatile",
+    model: "openai/gpt-oss-120b",
     temperature: 0.1,
     response_format: { type: "json_object" },
   });
