@@ -10,6 +10,16 @@ const PENALTY_MS = 30000;
 let requestTimestamps: number[] = [];
 let blockedUntil = 0;
 
+// Helper function untuk format tanggal yang readable (contoh: 02 Nov 2026 atau sesuai kebutuhan)
+const getFormattedDate = (dateString?: string): string => {
+  const d = dateString ? new Date(dateString) : new Date();
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export function registerAskHandler(bot: Telegraf) {
   bot.command("ask", async (ctx: Context) => {
     console.log("🔵 /ask triggered, user:", ctx.from?.id);
@@ -66,7 +76,15 @@ export function registerAskHandler(bot: Telegraf) {
         results.push(created);
       }
 
-      let replyMsg = `✅ *${results.length} Timesheet Entries Saved Successfully!*\n\n`;
+      // Ambil tanggal dari entry pertama (atau tanggal hari ini)
+      const entryDate = results[0]?.begin
+        ? results[0].begin.split("T")[0]
+        : undefined;
+      const formattedDate = getFormattedDate(entryDate);
+
+      let replyMsg = `✅ *${results.length} Timesheet Entries Saved Successfully!*\n`;
+      replyMsg += `📅 *Date:* ${formattedDate}\n\n`;
+
       results.forEach((res, idx) => {
         const beginTime = res.begin.split("T")[1].substring(0, 5);
         const endTime = res.end.split("T")[1].substring(0, 5);
@@ -81,10 +99,13 @@ export function registerAskHandler(bot: Telegraf) {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
+      const currentDate = getFormattedDate();
+
       console.log("🔴 Error caught:", err);
-      await ctx.reply(`❌ *Failed to process:* ${errorMessage}`, {
-        parse_mode: "Markdown",
-      });
+      await ctx.reply(
+        `❌ *Failed to Process* (${currentDate})\n\n• Reason: ${errorMessage}`,
+        { parse_mode: "Markdown" },
+      );
     }
   });
 }
