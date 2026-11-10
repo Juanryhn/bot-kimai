@@ -8,5 +8,6 @@ export const kimaiConfData: KimaiConfig = {
     "16": "Bugfix / Perbaikan error / Issue resolving / Fixing",
     "25": "Meeting / Daily standup / Koordinasi",
     "21": "Transfer Knowledge / Handover / Mentoring / Sharing session",
+    "28": "Cuti / Cuti Pengganti / Cuti Tahunan"
   },
 };
