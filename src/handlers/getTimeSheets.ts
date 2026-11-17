@@ -159,31 +159,40 @@ function createReport(
 ): string {
   const days = getWeekdays(begin, end);
   const totals = new Map<string, DayTotals>();
+  const vacationDates = new Set<string>();
+  const beginDate = formatDate(begin);
+  const endDate = formatDate(end);
   const now = new Date();
 
   for (const timesheet of timesheets) {
     const date = timesheet.begin.slice(0, 10);
     const durationSeconds = getDurationSeconds(timesheet, now);
+    const isVacation = getActivityId(timesheet.activity) === 28;
     const day = totals.get(date) ?? {
       durationSeconds: 0,
       activity28Seconds: 0,
       hasActivity28: false,
     };
     day.durationSeconds += durationSeconds;
-    if (getActivityId(timesheet.activity) === 28) {
+    if (isVacation) {
       day.activity28Seconds += durationSeconds;
       day.hasActivity28 = true;
+      if (date >= beginDate && date <= endDate) {
+        vacationDates.add(date);
+      }
     }
     totals.set(date, day);
   }
 
   const incompleteDays = days.filter((date) => {
     const day = totals.get(formatDate(date));
-    return (
-      !day ||
-      (day.durationSeconds < STANDARD_MINIMUM_SECONDS &&
-        day.activity28Seconds < ACTIVITY_28_MINIMUM_SECONDS)
-    );
+    if (!day) {
+      return true;
+    }
+
+    return day.hasActivity28
+      ? day.activity28Seconds < ACTIVITY_28_MINIMUM_SECONDS
+      : day.durationSeconds < STANDARD_MINIMUM_SECONDS;
   });
   const filledDays = days.length - incompleteDays.length;
   const percentage = days.length === 0 ? 100 : (filledDays / days.length) * 100;
@@ -197,10 +206,11 @@ function createReport(
     "",
     `🗓️ <b>Period:</b> <code>${formatDate(begin)} to ${formatDate(end)}</code>`,
     `🧾 <b>Total entries:</b> ${timesheets.length}`,
+    `🏖️ <b>Leave days logged:</b> ${vacationDates.size}`,
     `${statusIcon} <b>Weekdays complete:</b> <b>${filledDays}/${days.length} (${percentage.toFixed(1)}%)</b>`,
     progressBar,
     "",
-    `📌 <b>Daily target:</b> 8h total, or 2h of activity 28`,
+    `📌 <b>Completion rules:</b> work: 8h total | leave (Activity 28): 2h`,
     "",
   ];
 
@@ -216,7 +226,7 @@ function createReport(
       const usesActivity28 = day?.hasActivity28 ?? false;
       const detail =
         day && usesActivity28
-          ? `⏱️ <code>${formatHours(day.durationSeconds)}h total · Activity 28: ${formatHours(day.activity28Seconds)}h / 2.0h</code>`
+          ? `⏱️ <code>Vacation (Activity 28): ${formatHours(day.activity28Seconds)}h / 2.0h</code>`
           : day
             ? `⏱️ <code>${formatHours(day.durationSeconds)}h / 8.0h required</code>`
             : "⏱️ <code>0.0h / 8.0h required</code>";
