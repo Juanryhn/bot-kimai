@@ -142,14 +142,12 @@ function formatHours(seconds: number): string {
   return (seconds / 3600).toFixed(1);
 }
 
-function formatReadableDate(date: DateParts): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "short",
-    day: "2-digit",
+function formatReplyDate(date: DateParts): string {
+  const month = new Intl.DateTimeFormat("en", {
     month: "short",
-    year: "numeric",
     timeZone: "UTC",
   }).format(new Date(Date.UTC(date.year, date.month - 1, date.day)));
+  return `${String(date.day).padStart(2, "0")}-${month}-${date.year}`;
 }
 
 const collectDayTotals = (
@@ -243,7 +241,7 @@ const getIncompleteDayLines = (
       detail = `⏱️ <code>${formatHours(day.durationSeconds)}h / 8.0h required</code>`;
     }
 
-    lines.push(`• <b>${formatReadableDate(date)}</b>\n  ${detail}`);
+    lines.push(`• <b>${formatReplyDate(date)}</b>\n  ${detail}`);
   }
 
   return lines;
@@ -270,7 +268,7 @@ const createReport = (
     "",
     `📌 <b>Completion rules:</b> work: 8h total | leave (Activity 28): 2h`,
     "",
-    `🗓️ <b>Period:</b> <code>${formatDate(begin)} to ${formatDate(end)}</code>`,
+    `🗓️ <b>Period:</b> <code>${formatReplyDate(begin)} to ${formatReplyDate(end)}</code>`,
     `🧾 <b>Total entries:</b> ${timesheets.length}`,
     `🏖️ <b>Leave days logged:</b> ${vacationDays}`,
     `${statusIcon} <b>Weekdays complete:</b> <b>${filledDays}/${days.length} (${percentage.toFixed(1)}%)</b>`,
