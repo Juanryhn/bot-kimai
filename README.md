@@ -7,6 +7,7 @@ A small Telegram bot that parses natural-language timesheet instructions, uses a
 - Accepts `/ask` commands in Telegram with free-form instructions (e.g. "from 8 to 10 research component X").
 - Uses Groq chat completions to parse user intent into structured JSON entries.
 - Creates timesheet entries in Kimai via Kimai HTTP API.
+- Reports weekday timesheet completion with `/timesheets` and optional date ranges.
 - Simple health-check HTTP endpoint.
 - Rate limiting and owner-only access control.
 
@@ -106,6 +107,7 @@ There is an example file `kimai-conf.example.json` in the repository — copy or
 - A `vercel.json` is included to deploy the webhook as a serverless function. The default route sends requests to `/api/webhook`.
 - If you are specifically searching for the long-polling implementation of this project, see: https://github.com/Juanryhn/bot-kimai-long-polling
 - The `/ask` command content is sent to the Groq model and must return a JSON object with an `entries` array matching the expected shape.
+- Use `/timesheets` to report from the 19th of the previous month through today, or provide both dates, such as `/timesheets 2026-10-19 to 2026-11-17`. Dates may use `YYYY-MM-DD` or `DD-MM-YYYY`. The report ignores weekends, counts a weekday as complete at 8 hours total or at 2 hours of activity 28, and lists weekdays below the applicable threshold.
 - The repository includes a basic rate limiter to prevent rapid repeated requests.
 
 ## Troubleshooting

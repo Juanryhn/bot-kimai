@@ -4,6 +4,7 @@ import { TELEGRAM_BOT_TOKEN, ALLOWED_TELEGRAM_USER_ID } from "./config";
 
 import { registerStartHandler } from "./handlers/start";
 import { registerAskHandler } from "./handlers/ask";
+import { registerGetTimeSheetsHandler } from "./handlers/getTimeSheets";
 
 export const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
@@ -21,3 +22,4 @@ bot.use((ctx: Context, next) => {
 
 registerStartHandler(bot);
 registerAskHandler(bot);
+registerGetTimeSheetsHandler(bot);

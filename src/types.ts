@@ -18,3 +18,11 @@ export interface KimaiResponse {
   activity: number;
   description: string;
 }
+
+export interface KimaiTimesheet {
+  id: number;
+  begin: string;
+  end: string | null;
+  duration?: number | string | null;
+  activity: number | string | { id: number | string } | null;
+}
