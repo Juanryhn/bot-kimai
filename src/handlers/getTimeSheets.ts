@@ -74,8 +74,8 @@ function parseRequestedRange(
 
   const values = text
     .trim()
-    .replace(/\s*(?:\bto\b|\.\.)\s*/gi, " ")
-    .replace(/,/g, " ")
+    .replace(/\bto\b|\.\./gi, " ")
+    .replaceAll(",", " ")
     .split(/\s+/);
   if (values.length !== 2) {
     return {
@@ -152,12 +152,11 @@ function formatReadableDate(date: DateParts): string {
   }).format(new Date(Date.UTC(date.year, date.month - 1, date.day)));
 }
 
-function createReport(
+const collectDayTotals = (
   begin: DateParts,
   end: DateParts,
   timesheets: KimaiTimesheet[],
-): string {
-  const days = getWeekdays(begin, end);
+): { totals: Map<string, DayTotals>; vacationDays: number } => {
   const totals = new Map<string, DayTotals>();
   const vacationDates = new Set<string>();
   const beginDate = formatDate(begin);
@@ -184,58 +183,105 @@ function createReport(
     totals.set(date, day);
   }
 
-  const incompleteDays = days.filter((date) => {
-    const day = totals.get(formatDate(date));
-    if (!day) {
-      return true;
-    }
+  return { totals, vacationDays: vacationDates.size };
+};
 
-    return day.hasActivity28
-      ? day.activity28Seconds < ACTIVITY_28_MINIMUM_SECONDS
-      : day.durationSeconds < STANDARD_MINIMUM_SECONDS;
-  });
-  const filledDays = days.length - incompleteDays.length;
-  const percentage = days.length === 0 ? 100 : (filledDays / days.length) * 100;
+const isDayComplete = (day?: DayTotals): boolean => {
+  if (!day) {
+    return false;
+  }
+
+  if (day.hasActivity28) {
+    return day.activity28Seconds >= ACTIVITY_28_MINIMUM_SECONDS;
+  }
+
+  return day.durationSeconds >= STANDARD_MINIMUM_SECONDS;
+};
+
+const getCompletionDisplay = (
+  filledDays: number,
+  totalDays: number,
+): { percentage: number; progressBar: string; statusIcon: string } => {
+  const percentage = totalDays === 0 ? 100 : (filledDays / totalDays) * 100;
   const progressBlocks = Math.round(percentage / 5);
   const progressBar =
     "🟩".repeat(progressBlocks) + "⬜".repeat(20 - progressBlocks);
-  const statusIcon = percentage === 100 ? "✅" : percentage >= 80 ? "🟡" : "🔴";
+  let statusIcon: string;
+  if (percentage === 100) {
+    statusIcon = "✅";
+  } else if (percentage >= 80) {
+    statusIcon = "🟡";
+  } else {
+    statusIcon = "🔴";
+  }
+
+  return { percentage, progressBar, statusIcon };
+};
+
+const getIncompleteDayLines = (
+  incompleteDays: DateParts[],
+  totals: Map<string, DayTotals>,
+): string[] => {
+  if (incompleteDays.length === 0) {
+    return ["✅ <b>All weekdays meet the required threshold.</b>"];
+  }
+
+  const lines = [
+    `⚠️ <b>NEEDS ATTENTION (${incompleteDays.length} ${incompleteDays.length === 1 ? "day" : "days"})</b>`,
+  ];
+
+  for (const date of incompleteDays) {
+    const dateString = formatDate(date);
+    const day = totals.get(dateString);
+    let detail: string;
+
+    if (!day) {
+      detail = "⏱️ <code>0.0h / 8.0h required</code>";
+    } else if (day.hasActivity28) {
+      detail = `⏱️ <code>Vacation (Activity 28): ${formatHours(day.activity28Seconds)}h / 2.0h</code>`;
+    } else {
+      detail = `⏱️ <code>${formatHours(day.durationSeconds)}h / 8.0h required</code>`;
+    }
+
+    lines.push(`• <b>${formatReadableDate(date)}</b>\n  ${detail}`);
+  }
+
+  return lines;
+};
+
+const createReport = (
+  begin: DateParts,
+  end: DateParts,
+  timesheets: KimaiTimesheet[],
+): string => {
+  const days = getWeekdays(begin, end);
+  const { totals, vacationDays } = collectDayTotals(begin, end, timesheets);
+  const incompleteDays = days.filter(
+    (date) => !isDayComplete(totals.get(formatDate(date))),
+  );
+  const filledDays = days.length - incompleteDays.length;
+  const { percentage, progressBar, statusIcon } = getCompletionDisplay(
+    filledDays,
+    days.length,
+  );
 
   const lines = [
     "📊 <b>TIMESHEET SUMMARY</b>",
     "",
+    `📌 <b>Completion rules:</b> work: 8h total | leave (Activity 28): 2h`,
+    "",
     `🗓️ <b>Period:</b> <code>${formatDate(begin)} to ${formatDate(end)}</code>`,
     `🧾 <b>Total entries:</b> ${timesheets.length}`,
-    `🏖️ <b>Leave days logged:</b> ${vacationDates.size}`,
+    `🏖️ <b>Leave days logged:</b> ${vacationDays}`,
     `${statusIcon} <b>Weekdays complete:</b> <b>${filledDays}/${days.length} (${percentage.toFixed(1)}%)</b>`,
     progressBar,
     "",
-    `📌 <b>Completion rules:</b> work: 8h total | leave (Activity 28): 2h`,
-    "",
   ];
 
-  if (incompleteDays.length === 0) {
-    lines.push("✅ <b>All weekdays meet the required threshold.</b>");
-  } else {
-    lines.push(
-      `⚠️ <b>NEEDS ATTENTION (${incompleteDays.length} ${incompleteDays.length === 1 ? "day" : "days"})</b>`,
-    );
-    for (const date of incompleteDays) {
-      const dateString = formatDate(date);
-      const day = totals.get(dateString);
-      const usesActivity28 = day?.hasActivity28 ?? false;
-      const detail =
-        day && usesActivity28
-          ? `⏱️ <code>Vacation (Activity 28): ${formatHours(day.activity28Seconds)}h / 2.0h</code>`
-          : day
-            ? `⏱️ <code>${formatHours(day.durationSeconds)}h / 8.0h required</code>`
-            : "⏱️ <code>0.0h / 8.0h required</code>";
-      lines.push(`• <b>${formatReadableDate(date)}</b>\n  ${detail}`);
-    }
-  }
+  lines.push(...getIncompleteDayLines(incompleteDays, totals));
 
   return lines.join("\n");
-}
+};
 
 function splitReport(report: string): string[] {
   const chunks: string[] = [];
@@ -278,11 +324,13 @@ export function registerGetTimeSheetsHandler(bot: Telegraf) {
         parse_mode: "HTML",
       });
       const timesheets = await getTimesheets(begin, end);
-      for (const message of splitReport(
+      await splitReport(
         createReport(range.begin, range.end, timesheets),
-      )) {
-        await ctx.reply(message, { parse_mode: "HTML" });
-      }
+      ).reduce<Promise<unknown>>(
+        (previousReply, message) =>
+          previousReply.then(() => ctx.reply(message, { parse_mode: "HTML" })),
+        Promise.resolve(),
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unknown error occurred.";
