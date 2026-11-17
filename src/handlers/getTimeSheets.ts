@@ -142,6 +142,16 @@ function formatHours(seconds: number): string {
   return (seconds / 3600).toFixed(1);
 }
 
+function formatReadableDate(date: DateParts): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(date.year, date.month - 1, date.day)));
+}
+
 function createReport(
   begin: DateParts,
   end: DateParts,
@@ -177,29 +187,40 @@ function createReport(
   });
   const filledDays = days.length - incompleteDays.length;
   const percentage = days.length === 0 ? 100 : (filledDays / days.length) * 100;
+  const progressBlocks = Math.round(percentage / 5);
+  const progressBar =
+    "🟩".repeat(progressBlocks) + "⬜".repeat(20 - progressBlocks);
+  const statusIcon = percentage === 100 ? "✅" : percentage >= 80 ? "🟡" : "🔴";
 
   const lines = [
-    `Timesheet range: ${formatDate(begin)} to ${formatDate(end)}`,
-    `Total timesheets: ${timesheets.length}`,
-    `Days meeting target: ${filledDays}/${days.length} (${percentage.toFixed(1)}%)`,
+    "📊 <b>TIMESHEET SUMMARY</b>",
     "",
-    "Weekdays with no activity or below target:",
+    `🗓️ <b>Period:</b> <code>${formatDate(begin)} to ${formatDate(end)}</code>`,
+    `🧾 <b>Total entries:</b> ${timesheets.length}`,
+    `${statusIcon} <b>Weekdays complete:</b> <b>${filledDays}/${days.length} (${percentage.toFixed(1)}%)</b>`,
+    progressBar,
+    "",
+    `📌 <b>Daily target:</b> 8h total, or 2h of activity 28`,
+    "",
   ];
 
   if (incompleteDays.length === 0) {
-    lines.push("None - all weekdays meet the required threshold.");
+    lines.push("✅ <b>All weekdays meet the required threshold.</b>");
   } else {
+    lines.push(
+      `⚠️ <b>NEEDS ATTENTION (${incompleteDays.length} ${incompleteDays.length === 1 ? "day" : "days"})</b>`,
+    );
     for (const date of incompleteDays) {
       const dateString = formatDate(date);
       const day = totals.get(dateString);
       const usesActivity28 = day?.hasActivity28 ?? false;
       const detail =
         day && usesActivity28
-          ? `${formatHours(day.durationSeconds)}h total (${formatHours(day.activity28Seconds)}h activity 28); 2.0h activity 28 or 8.0h total required`
+          ? `⏱️ <code>${formatHours(day.durationSeconds)}h total · Activity 28: ${formatHours(day.activity28Seconds)}h / 2.0h</code>`
           : day
-            ? `${formatHours(day.durationSeconds)}h recorded; 8.0h required`
-            : "0.0h recorded; 8.0h required";
-      lines.push(`- ${dateString}: ${detail}`);
+            ? `⏱️ <code>${formatHours(day.durationSeconds)}h / 8.0h required</code>`
+            : "⏱️ <code>0.0h / 8.0h required</code>";
+      lines.push(`• <b>${formatReadableDate(date)}</b>\n  ${detail}`);
     }
   }
 
@@ -243,12 +264,14 @@ export function registerGetTimeSheetsHandler(bot: Telegraf) {
     const end = `${formatDate(range.end)}T23:59:59`;
 
     try {
-      await ctx.reply("Fetching timesheets...");
+      await ctx.reply("⏳ <b>Fetching timesheets...</b>", {
+        parse_mode: "HTML",
+      });
       const timesheets = await getTimesheets(begin, end);
       for (const message of splitReport(
         createReport(range.begin, range.end, timesheets),
       )) {
-        await ctx.reply(message);
+        await ctx.reply(message, { parse_mode: "HTML" });
       }
     } catch (error) {
       const message =
